@@ -1,15 +1,24 @@
 // src/app/api/webhook/expense/route.ts
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function createSupabaseAdminClient() {
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export async function POST(req: NextRequest) {
+  if (!url || !serviceRoleKey) {
+    throw new Error(
+      "Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL environment variable."
+    );
+  }
+
+  return createClient(url, serviceRoleKey);
+}
+
+export async function POST(req: Request) {
   try {
+    const supabase = createSupabaseAdminClient();
     const data = await req.json();
     const { searchParams } = new URL(req.url);
     const token = searchParams.get("token");
@@ -44,8 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }

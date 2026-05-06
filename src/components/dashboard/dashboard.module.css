@@ -1,0 +1,173 @@
+.page {
+  min-height: 100vh;
+  padding: 104px var(--side-padding) var(--side-padding);
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 28px var(--side-padding);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: var(--border);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(8px);
+  z-index: 30;
+}
+
+.brandWrap {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.brandDot {
+  width: 18px;
+  height: 18px;
+  border: 1px dashed var(--cf);
+  background: var(--cf);
+}
+
+.brand {
+  font-size: 14px;
+  color: var(--tx2);
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.email {
+  color: var(--tx2);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.logoutButton {
+  border: 1px dashed var(--tx2);
+  color: var(--tx2);
+  background: transparent;
+  padding: 6px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.logoutButton:hover {
+  border-color: var(--cf);
+  color: var(--cf);
+}
+
+.layout {
+  display: grid;
+  gap: 16px;
+}
+
+.sidebar {
+  border: var(--border);
+  background: var(--bg-light);
+  backdrop-filter: blur(4px);
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+  align-self: start;
+}
+
+.sidebarTitle {
+  font-size: 12px;
+  color: var(--tx2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sidebarNav {
+  display: grid;
+  gap: 8px;
+}
+
+.sidebarLink {
+  color: var(--tx);
+  font-size: 14px;
+  padding: 4px 0;
+  border-bottom: 1px dashed transparent;
+}
+
+.sidebarLink:hover {
+  color: var(--cf);
+  border-color: var(--cf);
+}
+
+.main {
+  display: grid;
+  gap: 16px;
+}
+
+.overviewGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.overviewCard {
+  border: var(--border);
+  background: var(--bg-light);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.overviewLabel {
+  font-size: 12px;
+  color: var(--tx2);
+  text-transform: uppercase;
+}
+
+.overviewValue {
+  font-size: clamp(20px, 3vw, 34px);
+  line-height: 1;
+}
+
+.moduleGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 700px) {
+  .overviewGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .layout {
+    grid-template-columns: 250px 1fr;
+  }
+}
+
+@media (min-width: 1100px) {
+  .moduleGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1450px) {
+  .moduleGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1800px) {
+  .moduleGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+

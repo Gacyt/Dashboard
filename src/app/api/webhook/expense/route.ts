@@ -19,13 +19,17 @@ function createSupabaseAdminClient() {
 export async function POST(req: Request) {
   try {
     const supabase = createSupabaseAdminClient();
-    const data = await req.json();
     const { searchParams } = new URL(req.url);
     const token = searchParams.get("token");
+    console.log("[webhook-expense] auth bypass confirmed for public token flow");
+    console.log("[webhook-expense] token received:", token ? "present" : "missing");
 
     if (!token) {
       return NextResponse.json({ error: "Missing token" }, { status: 400 });
     }
+
+    const data = await req.json();
+    console.log("[webhook-expense] request body:", data);
 
     // buscar usuario por token
     const { data: user, error: userError } = await supabase

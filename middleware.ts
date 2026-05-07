@@ -3,6 +3,12 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Public webhook endpoints must never require session/cookies.
+  if (pathname.startsWith("/api/webhook/")) {
+    return NextResponse.next();
+  }
+
   const { response, user } = await updateSession(request);
   const isProtectedPath = pathname.startsWith("/dashboard");
   const isAuthPath = pathname === "/login" || pathname === "/register";

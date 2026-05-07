@@ -1,5 +1,6 @@
 import os
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Request, status
+from fastapi.responses import JSONResponse
 from supabase import Client, create_client
 
 router = APIRouter()
@@ -16,14 +17,25 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 @router.post("/webhook/expense")
 @router.post("/api/webhook/expense")
 async def webhook_expense(request: Request):
-  payload = await request.json()
   token = request.query_params.get("token")
+  print("[webhook-expense] auth bypass confirmed for public token flow")
+  print(f"[webhook-expense] token received: {'present' if token else 'missing'}")
 
   if not token:
-    raise HTTPException(
+    return JSONResponse(
+      {"error": "Missing token"},
       status_code=status.HTTP_400_BAD_REQUEST,
-      detail="Missing token"
     )
+
+  try:
+    payload = await request.json()
+  except Exception:
+    return JSONResponse(
+      {"error": "Invalid request"},
+      status_code=status.HTTP_400_BAD_REQUEST,
+    )
+
+  print(f"[webhook-expense] request body: {payload}")
 
   user_result = (
     supabase
@@ -35,30 +47,30 @@ async def webhook_expense(request: Request):
   )
 
   if not user_result.data:
-    raise HTTPException(
+    return JSONResponse(
+      {"error": "Invalid token"},
       status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Invalid token"
     )
 
   amount = payload.get("amount")
   if amount is None:
-    raise HTTPException(
+    return JSONResponse(
+      {"error": "Missing amount"},
       status_code=status.HTTP_400_BAD_REQUEST,
-      detail="Missing amount"
     )
 
   try:
     normalized_amount = float(amount)
-  except (TypeError, ValueError) as exc:
-    raise HTTPException(
+  except (TypeError, ValueError):
+    return JSONResponse(
+      {"error": "Amount must be numeric"},
       status_code=status.HTTP_400_BAD_REQUEST,
-      detail="Amount must be numeric"
-    ) from exc
+    )
 
   if normalized_amount <= 0:
-    raise HTTPException(
+    return JSONResponse(
+      {"error": "Amount must be greater than zero"},
       status_code=status.HTTP_400_BAD_REQUEST,
-      detail="Amount must be greater than zero"
     )
 
   inserted = (
@@ -69,17 +81,18 @@ async def webhook_expense(request: Request):
         "user_id": user_result.data[0]["id"],
         "amount": normalized_amount,
         "category": payload.get("category", "other"),
-        "description": payload.get("description", "")
+        "description": payload.get("description", ""),
+        "expense_type": "normal",
       }
     )
     .execute()
   )
 
   if not inserted.data:
-    raise HTTPException(
+    return JSONResponse(
+      {"error": "Failed to create expense"},
       status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-      detail="Failed to create expense"
     )
 
-  return {"status": "ok", "expense_id": inserted.data[0]["id"]}
+  return {"success": True, "expense_id": inserted.data[0]["id"]}
 

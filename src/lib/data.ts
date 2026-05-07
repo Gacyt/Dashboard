@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { DashboardData } from "./types";
+import { DashboardData, Profile } from "./types";
 
 type QueryResult<T> = {
   data: T | null;
@@ -12,7 +12,7 @@ export async function getDashboardData(
 ): Promise<DashboardData> {
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
-    .select("id")
+    .select("id, webhook_token")
     .eq("id", userId)
     .maybeSingle();
 
@@ -41,11 +41,12 @@ export async function getDashboardData(
     habitsResult,
     workoutsResult,
     bodyMetricsResult,
-    journalResult
+    journalResult,
+    refreshedProfileResult
   ] = (await Promise.all([
     supabase
       .from("expenses")
-      .select("id, amount, category, description, created_at")
+      .select("id, amount, category, description, expense_type, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(30),
@@ -58,7 +59,7 @@ export async function getDashboardData(
       .maybeSingle(),
     supabase
       .from("tasks")
-      .select("id, title, completed, due_date")
+      .select("id, title, description, status, due_date, created_at")
       .eq("user_id", userId)
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(20),
@@ -70,7 +71,7 @@ export async function getDashboardData(
       .limit(20),
     supabase
       .from("habits")
-      .select("id, name, target_per_day, habit_logs(date, completed)")
+      .select("id, name, target_per_day, created_at, habit_logs(id, date, completed)")
       .eq("user_id", userId)
       .order("name", { ascending: true }),
     supabase
@@ -87,10 +88,11 @@ export async function getDashboardData(
       .limit(15),
     supabase
       .from("journal_entries")
-      .select("id, content, mood, created_at")
+      .select("id, title, content, mood, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(15)
+      .limit(15),
+    supabase.from("profiles").select("id, webhook_token").eq("id", userId).single()
   ])) as [
     QueryResult<DashboardData["expenses"]>,
     QueryResult<DashboardData["budget"]>,
@@ -99,7 +101,8 @@ export async function getDashboardData(
     QueryResult<DashboardData["habits"]>,
     QueryResult<DashboardData["workouts"]>,
     QueryResult<DashboardData["bodyMetrics"]>,
-    QueryResult<DashboardData["journalEntries"]>
+    QueryResult<DashboardData["journalEntries"]>,
+    QueryResult<Profile>
   ];
 
   const firstError = [
@@ -110,14 +113,20 @@ export async function getDashboardData(
     habitsResult.error,
     workoutsResult.error,
     bodyMetricsResult.error,
-    journalResult.error
+    journalResult.error,
+    refreshedProfileResult.error
   ].find((error) => error !== null);
 
   if (firstError) {
     throw new Error(`Failed to load dashboard data: ${firstError.message}`);
   }
 
+  if (!refreshedProfileResult.data) {
+    throw new Error("Failed to load user profile.");
+  }
+
   return {
+    profile: refreshedProfileResult.data,
     expenses: expensesResult.data ?? [],
     budget: budgetResult.data ?? null,
     tasks: tasksResult.data ?? [],

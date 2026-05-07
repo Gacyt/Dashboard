@@ -3,6 +3,7 @@ export type Expense = {
   amount: number;
   category: string;
   description: string;
+  expense_type: "normal" | "extraordinary";
   created_at: string;
 };
 
@@ -14,8 +15,10 @@ export type Budget = {
 export type Task = {
   id: string;
   title: string;
-  completed: boolean;
+  description: string;
+  status: "Pending" | "Completed";
   due_date: string | null;
+  created_at: string;
 };
 
 export type EventItem = {
@@ -26,6 +29,7 @@ export type EventItem = {
 };
 
 export type HabitLog = {
+  id: string;
   date: string;
   completed: boolean;
 };
@@ -34,6 +38,7 @@ export type Habit = {
   id: string;
   name: string;
   target_per_day: number;
+  created_at: string;
   habit_logs: HabitLog[];
 };
 
@@ -60,12 +65,19 @@ export type BodyMetric = {
 
 export type JournalEntry = {
   id: string;
+  title: string;
   content: string;
-  mood: string;
+  mood: "Great" | "Good" | "Neutral" | "Bad";
   created_at: string;
 };
 
+export type Profile = {
+  id: string;
+  webhook_token: string;
+};
+
 export type DashboardData = {
+  profile: Profile;
   expenses: Expense[];
   budget: Budget | null;
   tasks: Task[];

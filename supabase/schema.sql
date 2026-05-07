@@ -34,8 +34,15 @@ create table if not exists expenses (
   amount numeric not null check (amount > 0),
   category text not null default 'other',
   description text not null default '',
+  expense_type text not null default 'normal' check (expense_type in ('normal', 'extraordinary')),
   created_at timestamptz not null default now()
 );
+
+alter table expenses add column if not exists expense_type text default 'normal';
+alter table expenses drop constraint if exists expenses_expense_type_check;
+alter table expenses
+  add constraint expenses_expense_type_check
+  check (expense_type in ('normal', 'extraordinary'));
 
 create table if not exists budgets (
   id uuid primary key default gen_random_uuid(),
@@ -48,9 +55,19 @@ create table if not exists tasks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
   title text not null,
-  completed boolean not null default false,
-  due_date timestamptz
+  description text not null default '',
+  status text not null default 'Pending' check (status in ('Pending', 'Completed')),
+  due_date timestamptz,
+  created_at timestamptz not null default now()
 );
+
+alter table tasks add column if not exists description text not null default '';
+alter table tasks add column if not exists status text not null default 'Pending';
+alter table tasks add column if not exists created_at timestamptz not null default now();
+alter table tasks drop constraint if exists tasks_status_check;
+alter table tasks
+  add constraint tasks_status_check
+  check (status in ('Pending', 'Completed'));
 
 -- EVENTS
 create table if not exists events (
@@ -66,8 +83,11 @@ create table if not exists habits (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
   name text not null,
-  target_per_day int not null check (target_per_day > 0)
+  target_per_day int not null check (target_per_day > 0),
+  created_at timestamptz not null default now()
 );
+
+alter table habits add column if not exists created_at timestamptz not null default now();
 
 create table if not exists habit_logs (
   id uuid primary key default gen_random_uuid(),
@@ -106,10 +126,18 @@ create table if not exists body_metrics (
 create table if not exists journal_entries (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
+  title text not null default 'Untitled',
   content text not null,
-  mood text not null default 'neutral',
+  mood text not null default 'Neutral' check (mood in ('Great', 'Good', 'Neutral', 'Bad')),
   created_at timestamptz not null default now()
 );
+
+alter table journal_entries add column if not exists title text not null default 'Untitled';
+alter table journal_entries alter column mood set default 'Neutral';
+alter table journal_entries drop constraint if exists journal_entries_mood_check;
+alter table journal_entries
+  add constraint journal_entries_mood_check
+  check (mood in ('Great', 'Good', 'Neutral', 'Bad'));
 
 create index if not exists idx_expenses_user_created on expenses(user_id, created_at desc);
 create index if not exists idx_tasks_user_due on tasks(user_id, due_date);

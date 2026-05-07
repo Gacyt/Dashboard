@@ -44,6 +44,16 @@
   gap: 14px;
 }
 
+.menuButton {
+  border: 1px dashed var(--tx2);
+  color: var(--tx2);
+  background: transparent;
+  padding: 6px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .email {
   color: var(--tx2);
   font-size: 12px;
@@ -78,6 +88,10 @@
   display: grid;
   gap: 14px;
   align-self: start;
+}
+
+.sidebarOpen {
+  display: grid;
 }
 
 .sidebarTitle {
@@ -148,8 +162,22 @@
 }
 
 @media (min-width: 960px) {
+  .menuButton {
+    display: none;
+  }
+
   .layout {
     grid-template-columns: 250px 1fr;
+  }
+
+  .sidebar {
+    display: grid;
+  }
+}
+
+@media (max-width: 959px) {
+  .sidebar {
+    display: none;
   }
 }
 

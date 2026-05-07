@@ -45,7 +45,8 @@ export async function POST(req: Request) {
         user_id: user.id,
         amount: data.amount,
         category: data.category || "other",
-        description: data.description || ""
+        description: data.description || "",
+        expense_type: "normal"
       });
 
     if (insertError) {

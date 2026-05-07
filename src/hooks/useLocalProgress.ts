@@ -9,7 +9,11 @@ export function useLocalProgress(initialTasks: Task[], initialHabits: Habit[]) {
 
   const toggleTask = (taskId: string) => {
     setTasks((previous) =>
-      previous.map((task) => (task.id === taskId ? { ...task, completed: !task.completed } : task))
+      previous.map((task) =>
+        task.id === taskId
+          ? { ...task, status: task.status === "Completed" ? "Pending" : "Completed" }
+          : task
+      )
     );
   };
 
@@ -34,7 +38,10 @@ export function useLocalProgress(initialTasks: Task[], initialHabits: Habit[]) {
 
         return {
           ...habit,
-          habit_logs: [...habit.habit_logs, { date: today, completed: true }]
+          habit_logs: [
+            ...habit.habit_logs,
+            { id: crypto.randomUUID(), date: today, completed: true }
+          ]
         };
       })
     );
@@ -44,7 +51,7 @@ export function useLocalProgress(initialTasks: Task[], initialHabits: Habit[]) {
     if (!tasks.length) {
       return 0;
     }
-    const completed = tasks.filter((task) => task.completed).length;
+    const completed = tasks.filter((task) => task.status === "Completed").length;
     return Math.round((completed / tasks.length) * 100);
   }, [tasks]);
 

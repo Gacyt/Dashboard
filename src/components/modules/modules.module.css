@@ -72,6 +72,10 @@
   gap: 10px;
 }
 
+.flexGrow {
+  width: 100%;
+}
+
 .muted {
   color: var(--tx2);
   font-size: 12px;
@@ -89,6 +93,69 @@
 .checkButtonActive {
   border-color: var(--cf);
   color: var(--cf);
+}
+
+.buttonColumn {
+  display: grid;
+  gap: 6px;
+  align-items: start;
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionButton {
+  border: 1px solid var(--tx2);
+  background: transparent;
+  color: var(--tx);
+  padding: 8px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.actionButton:hover {
+  border-color: var(--cf);
+  color: var(--cf);
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+}
+
+.formGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.input,
+.textarea,
+.select {
+  border: 1px solid var(--tx2);
+  background: transparent;
+  color: var(--tx);
+  padding: 8px;
+  font-size: 13px;
+}
+
+.textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.codeBlock {
+  border: 1px dashed var(--tx2);
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.codeLine {
+  font-size: 12px;
+  line-break: anywhere;
 }
 
 .progressTrack {

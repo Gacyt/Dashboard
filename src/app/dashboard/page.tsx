@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import DashboardShell from "@/components/dashboard/DashboardShell";
-import { getDashboardData } from "@/lib/data";
+import DashboardView from "@/components/dashboard/DashboardView";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +14,6 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const data = await getDashboardData(supabase, user.id);
-
-  return <DashboardShell userEmail={user.email ?? "user"} data={data} />;
+  return <DashboardView userId={user.id} userEmail={user.email ?? "user"} />;
 }
 

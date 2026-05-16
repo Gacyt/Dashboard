@@ -20,6 +20,13 @@ const config = {
       borderRadius: {
         sm: "6px",
         md: "10px"
+      },
+      fontFamily: {
+        barlow: ["Barlow", "sans-serif"],
+        "barlow-condensed": ["Barlow Condensed", "sans-serif"]
+      },
+      transitionTimingFunction: {
+        smooth: "cubic-bezier(0.4, 0, 0.2, 1)"
       }
     }
   }

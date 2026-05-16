@@ -1,8 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import Sidebar from "@/components/layout/Sidebar";
-import Topbar from "@/components/layout/Topbar";
 import FinanceCard from "./FinanceCard";
 import HabitsCard from "./HabitsCard";
 import TasksCard from "./TasksCard";
@@ -11,6 +9,7 @@ import StatCard from "./StatCard";
 import SpendingDonut from "./SpendingDonut";
 import HabitMonthChart from "./HabitMonthChart";
 import Card from "@/components/ui/Card";
+import AppShell from "@/components/layout/AppShell";
 import { formatCRC } from "@/lib/format";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useHabits } from "@/hooks/useHabits";
@@ -24,10 +23,10 @@ export default function DashboardView({
   userId: string;
   userEmail: string;
 }) {
-  const { expenses, newExpenseCount, addExpense } = useExpenses(userId);
-  const { habits, metrics, toggleHabitToday, addHabit } = useHabits(userId);
-  const { tasks, pendingCount, toggleTask, addTask } = useTasks(userId);
-  const { entries, addEntry } = useJournalEntries(userId);
+  const { expenses } = useExpenses(userId);
+  const { habits, metrics, toggleHabitToday } = useHabits(userId);
+  const { tasks, pendingCount, toggleTask } = useTasks(userId);
+  const { entries } = useJournalEntries(userId);
 
   const summary = useMemo(() => {
     const habitsDone = habits.filter((habit) =>
@@ -76,13 +75,8 @@ export default function DashboardView({
   }, [expenses]);
 
   return (
-    <div className="nx-app">
-      <Sidebar newExpenseCount={newExpenseCount} pendingTasks={pendingCount} userEmail={userEmail} />
-
-      <main className="nx-main">
-        <Topbar />
-        <div className="nx-content">
-          <section className="nx-stats-row">
+    <AppShell userId={userId} userEmail={userEmail} title="COMMAND CENTER">
+      <section className="nx-stats-row">
             <StatCard
               tone="cyan"
               label="Habits Done"
@@ -117,65 +111,62 @@ export default function DashboardView({
               badgeText="Active"
               badgeTone="up"
             />
-          </section>
+      </section>
 
-          <section className="nx-main-grid">
-            <div id="finance">
-              <FinanceCard expenses={expenses} onQuickAdd={addExpense} />
-            </div>
-            <div id="habits">
-              <HabitsCard
-                habits={habits}
-                todayPct={metrics.todayPct}
-                weekPct={metrics.weekPct}
-                monthPct={metrics.monthPct}
-                weekDots={metrics.weekDots}
-                weekLineData={metrics.weekLineData}
-                onToggleHabit={toggleHabitToday}
-                onAddHabit={addHabit}
-              />
-            </div>
-            <div className="nx-right-col">
-              <div id="tasks">
-                <TasksCard tasks={tasks} onToggleTask={toggleTask} onAddTask={addTask} />
-              </div>
-              <div id="journal">
-                <JournalCard entries={entries} onAddEntry={addEntry} />
-              </div>
-            </div>
-          </section>
-
-          <section id="analytics">
-            <div className="nx-section-header">
-              <h3 className="nx-section-title">ANALYTICS</h3>
-              <div className="nx-section-line" />
-              <span className="nx-section-badge">
-                {new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-              </span>
-            </div>
-            <div className="nx-analytics-row">
-              <Card title="SPENDING BREAKDOWN" subtitle="By category · this month">
-                <div className="nx-card-body">
-                  <div className="nx-chart-legend">
-                    {spendingBreakdown.map((item) => (
-                      <span className="nx-legend-item" key={item.name}>
-                        <span className={`nx-legend-sq ${item.name.toLowerCase()}`} />
-                        {item.name} {item.value}%
-                      </span>
-                    ))}
-                  </div>
-                  <SpendingDonut data={spendingBreakdown} />
-                </div>
-              </Card>
-              <Card title="HABIT COMPLETION" subtitle="% per day · this month">
-                <div className="nx-card-body">
-                  <HabitMonthChart data={metrics.monthData} />
-                </div>
-              </Card>
-            </div>
-          </section>
+      <section className="nx-main-grid">
+        <div id="finance">
+          <FinanceCard expenses={expenses} />
         </div>
-      </main>
-    </div>
+        <div id="habits">
+          <HabitsCard
+            habits={habits}
+            todayPct={metrics.todayPct}
+            weekPct={metrics.weekPct}
+            monthPct={metrics.monthPct}
+            weekDots={metrics.weekDots}
+            weekLineData={metrics.weekLineData}
+            onToggleHabit={toggleHabitToday}
+          />
+        </div>
+        <div className="nx-right-col">
+          <div id="tasks">
+            <TasksCard tasks={tasks} onToggleTask={toggleTask} />
+          </div>
+          <div id="journal">
+            <JournalCard entries={entries} />
+          </div>
+        </div>
+      </section>
+
+      <section id="analytics">
+        <div className="nx-section-header">
+          <h3 className="nx-section-title">ANALYTICS</h3>
+          <div className="nx-section-line" />
+          <span className="nx-section-badge">
+            {new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+          </span>
+        </div>
+        <div className="nx-analytics-row">
+          <Card title="SPENDING BREAKDOWN" subtitle="By category · this month">
+            <div className="nx-card-body">
+              <div className="nx-chart-legend">
+                {spendingBreakdown.map((item) => (
+                  <span className="nx-legend-item" key={item.name}>
+                    <span className={`nx-legend-sq ${item.name.toLowerCase()}`} />
+                    {item.name} {item.value}%
+                  </span>
+                ))}
+              </div>
+              <SpendingDonut data={spendingBreakdown} />
+            </div>
+          </Card>
+          <Card title="HABIT COMPLETION" subtitle="% per day · this month">
+            <div className="nx-card-body">
+              <HabitMonthChart data={metrics.monthData} />
+            </div>
+          </Card>
+        </div>
+      </section>
+    </AppShell>
   );
 }

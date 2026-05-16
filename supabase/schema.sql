@@ -44,6 +44,90 @@ alter table expenses
   add constraint expenses_expense_type_check
   check (expense_type in ('normal', 'extraordinary'));
 
+alter table expenses
+  add column if not exists category_id uuid;
+alter table expenses
+  add column if not exists type text default 'expense';
+alter table expenses drop constraint if exists expenses_type_check;
+alter table expenses
+  add constraint expenses_type_check
+  check (type in ('expense', 'extraordinary'));
+
+-- CATEGORY + RULES + BUDGET V3
+create table if not exists spending_categories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  name text not null,
+  color text not null default '#00D4FF',
+  monthly_budget numeric(12,2) not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists expense_rules (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  keyword text not null,
+  match_type text not null check (match_type in ('contains', 'exact')),
+  category_id uuid references spending_categories(id) on delete cascade,
+  priority integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+alter table expenses drop constraint if exists expenses_category_id_fkey;
+alter table expenses
+  add constraint expenses_category_id_fkey
+  foreign key (category_id)
+  references spending_categories(id);
+
+create table if not exists deposits (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  amount numeric(12,2) not null check (amount > 0),
+  source text,
+  type text not null check (type in ('salary', 'freelance', 'transfer', 'refund', 'other')),
+  date date not null default current_date,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists monthly_budgets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  month text not null,
+  total numeric(12,2) not null default 0,
+  created_at timestamptz not null default now(),
+  unique (user_id, month)
+);
+
+create table if not exists gym_days (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  date date not null,
+  type text not null check (type in ('workout', 'rest')),
+  label text,
+  muscles text[] not null default '{}',
+  unique (user_id, date)
+);
+
+create table if not exists exercises (
+  id uuid primary key default gen_random_uuid(),
+  gym_day_id uuid not null references gym_days(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  name text not null,
+  notes text,
+  photo_url text,
+  order_index integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists exercise_sets (
+  id uuid primary key default gen_random_uuid(),
+  exercise_id uuid not null references exercises(id) on delete cascade,
+  set_number integer not null,
+  weight_kg numeric(6,2),
+  reps integer,
+  notes text
+);
+
 create table if not exists budgets (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references profiles(id) on delete cascade,
@@ -122,6 +206,42 @@ create table if not exists body_metrics (
   date date not null
 );
 
+-- RECURRING WORKOUT MODEL (WEEKDAY-BASED)
+create table if not exists workout_weekdays (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  weekday smallint not null check (weekday between 1 and 7),
+  title text not null,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, weekday)
+);
+
+create table if not exists workout_weekday_exercises (
+  id uuid primary key default gen_random_uuid(),
+  workout_weekday_id uuid not null references workout_weekdays(id) on delete cascade,
+  name text not null,
+  notes text,
+  target_sets int not null default 4 check (target_sets > 0),
+  target_reps int not null default 8 check (target_reps > 0),
+  order_index int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists workout_progress_logs (
+  id uuid primary key default gen_random_uuid(),
+  workout_weekday_exercise_id uuid not null references workout_weekday_exercises(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  performed_on date not null default current_date,
+  weight_kg numeric(6,2),
+  reps int,
+  completed boolean not null default false,
+  notes text,
+  created_at timestamptz not null default now(),
+  unique (workout_weekday_exercise_id, performed_on)
+);
+
 -- JOURNAL
 create table if not exists journal_entries (
   id uuid primary key default gen_random_uuid(),
@@ -140,12 +260,23 @@ alter table journal_entries
   check (mood in ('Great', 'Good', 'Neutral', 'Bad'));
 
 create index if not exists idx_expenses_user_created on expenses(user_id, created_at desc);
+create index if not exists idx_expenses_user_category_created on expenses(user_id, category_id, created_at desc);
 create index if not exists idx_tasks_user_due on tasks(user_id, due_date);
 create index if not exists idx_events_user_start on events(user_id, start_time);
 create index if not exists idx_habits_user on habits(user_id);
 create index if not exists idx_workouts_user_date on workouts(user_id, date desc);
 create index if not exists idx_body_metrics_user_date on body_metrics(user_id, date desc);
+create index if not exists idx_workout_weekdays_user_weekday on workout_weekdays(user_id, weekday);
+create index if not exists idx_workout_weekday_exercises_day_order on workout_weekday_exercises(workout_weekday_id, order_index);
+create index if not exists idx_workout_progress_logs_user_date on workout_progress_logs(user_id, performed_on desc);
 create index if not exists idx_journal_user_created on journal_entries(user_id, created_at desc);
+create index if not exists idx_categories_user_name on spending_categories(user_id, name);
+create index if not exists idx_rules_user_priority on expense_rules(user_id, priority desc);
+create index if not exists idx_deposits_user_date on deposits(user_id, date desc);
+create index if not exists idx_monthly_budgets_user_month on monthly_budgets(user_id, month);
+create index if not exists idx_gym_days_user_date on gym_days(user_id, date desc);
+create index if not exists idx_exercises_day_order on exercises(gym_day_id, order_index asc);
+create index if not exists idx_exercise_sets_exercise_set on exercise_sets(exercise_id, set_number asc);
 
 -- ENABLE RLS
 alter table profiles enable row level security;
@@ -158,7 +289,17 @@ alter table habit_logs enable row level security;
 alter table workouts enable row level security;
 alter table workout_sets enable row level security;
 alter table body_metrics enable row level security;
+alter table workout_weekdays enable row level security;
+alter table workout_weekday_exercises enable row level security;
+alter table workout_progress_logs enable row level security;
 alter table journal_entries enable row level security;
+alter table spending_categories enable row level security;
+alter table expense_rules enable row level security;
+alter table deposits enable row level security;
+alter table monthly_budgets enable row level security;
+alter table gym_days enable row level security;
+alter table exercises enable row level security;
+alter table exercise_sets enable row level security;
 
 -- POLICIES
 drop policy if exists profiles_owner_access on profiles;
@@ -201,8 +342,48 @@ create policy body_owner_access on body_metrics
 for all using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
+drop policy if exists workout_weekdays_owner_access on workout_weekdays;
+create policy workout_weekdays_owner_access on workout_weekdays
+for all using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists workout_progress_logs_owner_access on workout_progress_logs;
+create policy workout_progress_logs_owner_access on workout_progress_logs
+for all using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
 drop policy if exists journal_owner_access on journal_entries;
 create policy journal_owner_access on journal_entries
+for all using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists categories_owner_access on spending_categories;
+create policy categories_owner_access on spending_categories
+for all using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists rules_owner_access on expense_rules;
+create policy rules_owner_access on expense_rules
+for all using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists deposits_owner_access on deposits;
+create policy deposits_owner_access on deposits
+for all using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists monthly_budgets_owner_access on monthly_budgets;
+create policy monthly_budgets_owner_access on monthly_budgets
+for all using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists gym_days_owner_access on gym_days;
+create policy gym_days_owner_access on gym_days
+for all using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists exercises_owner_access on exercises;
+create policy exercises_owner_access on exercises
 for all using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
@@ -245,3 +426,40 @@ with check (
   )
 );
 
+drop policy if exists workout_weekday_exercises_access on workout_weekday_exercises;
+create policy workout_weekday_exercises_access on workout_weekday_exercises
+for all using (
+  exists (
+    select 1
+    from workout_weekdays
+    where workout_weekdays.id = workout_weekday_exercises.workout_weekday_id
+      and workout_weekdays.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1
+    from workout_weekdays
+    where workout_weekdays.id = workout_weekday_exercises.workout_weekday_id
+      and workout_weekdays.user_id = auth.uid()
+  )
+);
+
+drop policy if exists exercise_sets_access on exercise_sets;
+create policy exercise_sets_access on exercise_sets
+for all using (
+  exists (
+    select 1
+    from exercises
+    where exercises.id = exercise_sets.exercise_id
+      and exercises.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1
+    from exercises
+    where exercises.id = exercise_sets.exercise_id
+      and exercises.user_id = auth.uid()
+  )
+);

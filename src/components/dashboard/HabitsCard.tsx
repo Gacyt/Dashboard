@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Card from "@/components/ui/Card";
-import QuickAddInput from "@/components/ui/QuickAddInput";
 import HabitLineChart from "./HabitLineChart";
 import { Habit } from "@/lib/types";
+import { openCreateHub } from "@/lib/createHub";
 
 export default function HabitsCard({
   habits,
@@ -13,8 +13,7 @@ export default function HabitsCard({
   monthPct,
   weekDots,
   weekLineData,
-  onToggleHabit,
-  onAddHabit
+  onToggleHabit
 }: {
   habits: Habit[];
   todayPct: number;
@@ -23,9 +22,7 @@ export default function HabitsCard({
   weekDots: Array<"on" | "warn" | "off">;
   weekLineData: Array<{ day: string; pct: number }>;
   onToggleHabit: (habit: Habit) => Promise<void>;
-  onAddHabit: (name: string) => Promise<void>;
 }) {
-  const [quickHabit, setQuickHabit] = useState("");
   const today = new Date().toISOString().slice(0, 10);
 
   const visualHabits = useMemo(
@@ -42,7 +39,11 @@ export default function HabitsCard({
     <Card
       title="DAILY HABITS"
       subtitle={`${visualHabits.filter((item) => item.done).length} of ${Math.max(visualHabits.length, 1)} complete`}
-      action={<button className="nx-card-action">Manage</button>}
+      action={
+        <button className="nx-card-action" type="button" onClick={() => openCreateHub("habit")}>
+          Add Habit
+        </button>
+      }
     >
       <div className="nx-habit-summary">
         <div className="nx-habit-stat">
@@ -87,20 +88,6 @@ export default function HabitsCard({
         <p className="nx-list-label">Habit % — This Week</p>
         <HabitLineChart data={weekLineData} />
       </div>
-
-      <QuickAddInput
-        placeholder="Add new habit..."
-        value={quickHabit}
-        onChange={setQuickHabit}
-        buttonLabel="+ Habit"
-        onClick={async () => {
-          if (!quickHabit.trim()) {
-            return;
-          }
-          await onAddHabit(quickHabit.trim());
-          setQuickHabit("");
-        }}
-      />
     </Card>
   );
 }

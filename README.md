@@ -29,7 +29,9 @@ npm install
 ```bash
 npm run dev
 ```
-Local webhook testing uses the Next.js route at `src/app/api/webhook/expense/route.ts`.
+Local webhook testing uses the Next.js routes at:
+- `src/app/api/webhook/expense/route.ts`
+- `src/app/api/webhook/deposit/route.ts`
 
 ### 5. Deploy
 Deploy on Vercel.
@@ -48,8 +50,24 @@ Content-Type: application/json
 }
 ```
 
+```http
+POST /api/webhook/deposit?token=USER_TOKEN
+Content-Type: application/json
+
+{
+  "amount": 850000,
+  "source": "Salary",
+  "type": "salary",
+  "date": "2026-05-01"
+}
+```
+
 ## Features
 - Finance tracking with budget summary and category chart.
+- Category management + expense auto-rules.
+- Monthly budget allocation page.
+- Gym routine page with exercise sets and photo upload support.
+- Deposit/income tracking and net balance.
 - Tasks and calendar module cards.
 - Habits module with completion progress.
 - Fitness module with body-metric charts.
@@ -60,4 +78,3 @@ Content-Type: application/json
 ## Notes
 - UI style is adapted from the original template design language (colors, spacing, typography, borders, and card feel) without redesigning the visual identity.
 - Responsive layout keeps card proportions while adapting to mobile (1 column), tablet (2 columns), and desktop (3-4 columns).
-

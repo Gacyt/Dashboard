@@ -1,34 +1,50 @@
 import Link from "next/link";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { usePathname } from "next/navigation";
 
 type SidebarProps = {
   newExpenseCount: number;
   pendingTasks: number;
   userEmail: string;
+  isOpen?: boolean;
+  onNavigate?: () => void;
 };
 
 function NavItem({
+  href,
   label,
-  active,
+  currentPath,
   badge
 }: {
+  href: string;
   label: string;
-  active?: boolean;
+  currentPath: string;
   badge?: string | number;
 }) {
+  const active =
+    href === "/dashboard"
+      ? currentPath === href
+      : currentPath === href || currentPath.startsWith(`${href}/`);
   return (
-    <a className={`nx-nav-item ${active ? "active" : ""}`} href={`#${label.toLowerCase()}`}>
+    <Link className={`nx-nav-item ${active ? "active" : ""}`} href={href}>
       <span>{label}</span>
       {badge !== undefined ? <span className="nx-nav-badge">{badge}</span> : null}
-    </a>
+    </Link>
   );
 }
 
-export default function Sidebar({ newExpenseCount, pendingTasks, userEmail }: SidebarProps) {
+export default function Sidebar({
+  newExpenseCount,
+  pendingTasks,
+  userEmail,
+  isOpen,
+  onNavigate
+}: SidebarProps) {
+  const pathname = usePathname();
   const initials = (userEmail || "NX").slice(0, 2).toUpperCase();
 
   return (
-    <aside className="nx-sidebar">
+    <aside className={`nx-sidebar ${isOpen ? "is-open" : ""}`} onClick={onNavigate}>
       <div className="nx-sidebar-top">
         <div className="nx-logo">
           <div className="nx-logo-mark">NX</div>
@@ -41,23 +57,25 @@ export default function Sidebar({ newExpenseCount, pendingTasks, userEmail }: Si
 
       <div className="nx-nav-section">
         <p className="nx-nav-section-label">Overview</p>
-        <NavItem label="Dashboard" active />
+        <NavItem href="/dashboard" label="Dashboard" currentPath={pathname} />
       </div>
 
       <div className="nx-nav-section">
         <p className="nx-nav-section-label">Systems</p>
-        <NavItem label="Finance" badge={newExpenseCount} />
-        <NavItem label="Habits" />
-        <NavItem label="Tasks" badge={pendingTasks} />
-        <NavItem label="Journal" />
-        <NavItem label="Fitness" />
+        <NavItem href="/dashboard/finance" label="Finance" currentPath={pathname} badge={newExpenseCount} />
+        <NavItem href="/dashboard/habits" label="Habits" currentPath={pathname} />
+        <NavItem href="/dashboard/tasks" label="Tasks" currentPath={pathname} badge={pendingTasks} />
+        <NavItem href="/dashboard/journal" label="Journal" currentPath={pathname} />
+        <NavItem href="/dashboard/fitness" label="Fitness" currentPath={pathname} />
+        <NavItem href="/dashboard/gym" label="Gym" currentPath={pathname} />
+        <NavItem href="/dashboard/categories" label="Categories" currentPath={pathname} />
+        <NavItem href="/dashboard/budget" label="Budget" currentPath={pathname} />
       </div>
 
       <div className="nx-nav-section">
         <p className="nx-nav-section-label">Tools</p>
-        <NavItem label="Calendar" />
-        <NavItem label="Webhook" />
-        <NavItem label="Analytics" />
+        <NavItem href="/dashboard/analytics" label="Analytics" currentPath={pathname} />
+        <NavItem href="/dashboard/webhook" label="Webhook" currentPath={pathname} />
       </div>
 
       <div className="nx-sidebar-footer">

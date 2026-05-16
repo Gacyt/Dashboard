@@ -8,7 +8,9 @@ export default function ThemeToggle() {
 
   return (
     <div className="nx-theme-switch">
-      <span className="nx-theme-label">{isLight ? "LIGHT" : "DARK"}</span>
+      <span className="nx-theme-label">
+        {isLight ? "☀ LIGHT" : "🌙 DARK"}
+      </span>
       <button
         type="button"
         className={`nx-toggle ${isLight ? "on" : ""}`}

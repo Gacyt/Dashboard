@@ -1,20 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import Card from "@/components/ui/Card";
 import { JournalEntry } from "@/lib/types";
+import { openCreateHub } from "@/lib/createHub";
 
 export default function JournalCard({
-  entries,
-  onAddEntry
+  entries
 }: {
   entries: JournalEntry[];
-  onAddEntry: (content: string) => Promise<void>;
 }) {
-  const [draft, setDraft] = useState("");
-
   return (
-    <Card title="JOURNAL" subtitle="Latest entries" action={<button className="nx-card-action">All entries</button>}>
+    <Card
+      title="JOURNAL"
+      subtitle="Latest entries"
+      action={
+        <button className="nx-card-action" type="button" onClick={() => openCreateHub("journal")}>
+          New Entry
+        </button>
+      }
+    >
       <div className="nx-journal-body">
         {entries.length > 0 ? (
           <div className="nx-journal-entry">
@@ -29,24 +34,14 @@ export default function JournalCard({
             </p>
           </div>
         )}
-
-        <textarea
-          className="nx-journal-input"
-          placeholder="Write today's entry..."
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-        />
-        <button
-          className="nx-new-entry-btn"
-          type="button"
-          onClick={async () => {
-            if (!draft.trim()) return;
-            await onAddEntry(draft.trim());
-            setDraft("");
-          }}
-        >
-          ✎ Write Today&apos;s Entry
-        </button>
+        <div className="nx-journal-actions">
+          <button className="nx-btn primary" type="button" onClick={() => openCreateHub("journal")}>
+            Capture Today
+          </button>
+          <Link className="nx-btn" href="/dashboard/journal">
+            Open Timeline
+          </Link>
+        </div>
       </div>
     </Card>
   );

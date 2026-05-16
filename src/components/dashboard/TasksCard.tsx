@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Card from "@/components/ui/Card";
-import QuickAddInput from "@/components/ui/QuickAddInput";
 import { Task } from "@/lib/types";
+import { openCreateHub } from "@/lib/createHub";
 
 function taskPriority(task: Task) {
   if (!task.due_date) return "low";
@@ -16,20 +15,20 @@ function taskPriority(task: Task) {
 
 export default function TasksCard({
   tasks,
-  onToggleTask,
-  onAddTask
+  onToggleTask
 }: {
   tasks: Task[];
   onToggleTask: (task: Task) => Promise<void>;
-  onAddTask: (title: string) => Promise<void>;
 }) {
-  const [quickTask, setQuickTask] = useState("");
-
   return (
     <Card
       title="TASKS"
       subtitle={`${tasks.filter((task) => task.status === "Pending").length} pending`}
-      action={<button className="nx-card-action">+ Add</button>}
+      action={
+        <button className="nx-card-action" type="button" onClick={() => openCreateHub("task")}>
+          Add Task
+        </button>
+      }
     >
       <div className="nx-task-list">
         {tasks.slice(0, 5).map((task) => {
@@ -49,17 +48,6 @@ export default function TasksCard({
           );
         })}
       </div>
-      <QuickAddInput
-        placeholder="Add new task..."
-        value={quickTask}
-        onChange={setQuickTask}
-        buttonLabel="+ Task"
-        onClick={async () => {
-          if (!quickTask.trim()) return;
-          await onAddTask(quickTask.trim());
-          setQuickTask("");
-        }}
-      />
     </Card>
   );
 }

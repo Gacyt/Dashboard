@@ -1,4 +1,5 @@
 import Badge from "@/components/ui/Badge";
+import { useCountUp } from "@/hooks/useCountUp";
 
 type StatCardProps = {
   tone: "cyan" | "orange" | "red" | "green";
@@ -19,11 +20,15 @@ export default function StatCard({
   badgeText,
   badgeTone
 }: StatCardProps) {
+  const numericValue = Number(value);
+  const animatedValue = useCountUp(Number.isFinite(numericValue) ? numericValue : 0, 700);
+  const displayValue = Number.isFinite(numericValue) ? String(animatedValue) : value;
+
   return (
     <article className={`nx-stat-card ${tone}`}>
       <p className="nx-stat-label">{label}</p>
       <p className="nx-stat-val">
-        {value}
+        {displayValue}
         {subValue ? <span className="nx-stat-denom">{subValue}</span> : null}
       </p>
       <div className="nx-stat-footer">

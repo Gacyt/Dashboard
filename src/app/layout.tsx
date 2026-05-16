@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import ThemeProvider from "@/components/ui/ThemeProvider";
+import { ToastProvider } from "@/hooks/useToast";
 import "../styles/globals.css";
 
 const barlow = Barlow({
@@ -11,7 +12,7 @@ const barlow = Barlow({
 
 const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
-  weight: ["700", "800"],
+  weight: ["600", "700", "800"],
   variable: "--font-barlow-condensed"
 });
 
@@ -28,9 +29,10 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="dark">
       <body className={`${barlow.variable} ${barlowCondensed.variable}`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
 }
-

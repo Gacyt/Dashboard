@@ -1,30 +1,15 @@
-import { redirect } from "next/navigation";
-import JournalPageClient from "@/components/journal/JournalPageClient";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { JournalEntry } from "@/lib/types";
+import AppShell from "@/components/layout/AppShell";
+import JournalDashboardPageClient from "@/components/pages/JournalDashboardPageClient";
+import { requireUser } from "@/lib/requireUser";
 
 export const dynamic = "force-dynamic";
 
 export default async function JournalPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const user = await requireUser();
 
-  if (!user) {
-    redirect("/login");
-  }
-
-  const { data, error } = await supabase
-    .from("journal_entries")
-    .select("id, title, content, mood, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(30);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return <JournalPageClient initialEntries={(data ?? []) as JournalEntry[]} />;
+  return (
+    <AppShell userId={user.id} userEmail={user.email ?? "user"} title="JOURNAL">
+      <JournalDashboardPageClient userId={user.id} />
+    </AppShell>
+  );
 }

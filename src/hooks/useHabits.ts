@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Habit } from "@/lib/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
+import { NX_CREATE_HUB_CREATED_EVENT } from "@/lib/createHub";
 
 function dayKey(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -13,12 +14,28 @@ export function useHabits(userId: string) {
   const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
-    supabase
-      .from("habits")
-      .select("id, name, target_per_day, created_at, habit_logs(id, date, completed)")
-      .eq("user_id", userId)
-      .order("name", { ascending: true })
-      .then(({ data }) => setHabits((data ?? []) as Habit[]));
+    const refresh = () => {
+      supabase
+        .from("habits")
+        .select("id, name, target_per_day, created_at, habit_logs(id, date, completed)")
+        .eq("user_id", userId)
+        .order("name", { ascending: true })
+        .then(({ data }) => setHabits((data ?? []) as Habit[]));
+    };
+
+    const onCreated = (event: Event) => {
+      const detail = (event as CustomEvent<{ kind?: string }>).detail;
+      if (detail?.kind === "habit") {
+        refresh();
+      }
+    };
+
+    refresh();
+    window.addEventListener(NX_CREATE_HUB_CREATED_EVENT, onCreated as EventListener);
+
+    return () => {
+      window.removeEventListener(NX_CREATE_HUB_CREATED_EVENT, onCreated as EventListener);
+    };
   }, [supabase, userId]);
 
   const metrics = useMemo(() => {
@@ -103,16 +120,23 @@ export function useHabits(userId: string) {
     }
   };
 
-  const addHabit = async (name: string) => {
-    if (!name.trim()) {
+  const addHabit = async (
+    payload: string | { name: string; target_per_day?: number }
+  ) => {
+    const next =
+      typeof payload === "string"
+        ? { name: payload, target_per_day: 1 }
+        : payload;
+
+    if (!next.name.trim()) {
       return;
     }
     const { data } = await supabase
       .from("habits")
       .insert({
         user_id: userId,
-        name,
-        target_per_day: 1
+        name: next.name.trim(),
+        target_per_day: Math.max(1, Number(next.target_per_day ?? 1))
       })
       .select("id, name, target_per_day, created_at, habit_logs(id, date, completed)")
       .single();

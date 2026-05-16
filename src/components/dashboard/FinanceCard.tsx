@@ -1,20 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Card from "@/components/ui/Card";
-import QuickAddInput from "@/components/ui/QuickAddInput";
 import { Expense } from "@/lib/types";
 import { formatCRC } from "@/lib/format";
+import { openCreateHub } from "@/lib/createHub";
 
 export default function FinanceCard({
-  expenses,
-  onQuickAdd
+  expenses
 }: {
   expenses: Expense[];
-  onQuickAdd: (amount: number, description: string) => Promise<void>;
 }) {
-  const [quickAmount, setQuickAmount] = useState("");
-
   const finance = useMemo(() => {
     const spent = expenses.reduce((acc, item) => acc + Number(item.amount), 0);
     const totalBudget = spent > 0 ? spent / 0.34 : 745000;
@@ -24,7 +20,15 @@ export default function FinanceCard({
   }, [expenses]);
 
   return (
-    <Card title="FINANCE" subtitle="Current month — CRC" action={<button className="nx-card-action">+ Add</button>}>
+    <Card
+      title="FINANCE"
+      subtitle="Current month — CRC"
+      action={
+        <button className="nx-card-action" type="button" onClick={() => openCreateHub("expense")}>
+          Add Expense
+        </button>
+      }
+    >
       <div className="nx-card-body">
         <div className="nx-fin-grid">
           <div className="nx-fin-box">
@@ -69,21 +73,6 @@ export default function FinanceCard({
           ))}
         </div>
       </div>
-
-      <QuickAddInput
-        placeholder="Amount in CRC..."
-        value={quickAmount}
-        onChange={setQuickAmount}
-        buttonLabel="+ Expense"
-        onClick={async () => {
-          const amount = Number(quickAmount);
-          if (!Number.isFinite(amount) || amount <= 0) {
-            return;
-          }
-          await onQuickAdd(amount, "Quick expense");
-          setQuickAmount("");
-        }}
-      />
     </Card>
   );
 }

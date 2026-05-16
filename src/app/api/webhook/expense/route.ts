@@ -1,64 +1,64 @@
-// src/app/api/webhook/expense/route.ts
-
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { matchExpenseRule } from "@/lib/matchExpenseRule";
+import { getWebhookUserByToken } from "@/lib/supabase/admin";
 
-function createSupabaseAdminClient() {
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceRoleKey) {
-    throw new Error(
-      "Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL environment variable."
-    );
-  }
-
-  return createClient(url, serviceRoleKey);
-}
+type ExpenseWebhookPayload = {
+  amount: number;
+  category?: string | null;
+  description?: string;
+};
 
 export async function POST(req: Request) {
-  try {
-    const supabase = createSupabaseAdminClient();
-    const { searchParams } = new URL(req.url);
-    const token = searchParams.get("token");
-    console.log("[webhook-expense] auth bypass confirmed for public token flow");
-    console.log("[webhook-expense] token received:", token ? "present" : "missing");
+  const { searchParams } = new URL(req.url);
+  const token = searchParams.get("token");
 
-    if (!token) {
-      return NextResponse.json({ error: "Missing token" }, { status: 400 });
-    }
-
-    const data = await req.json();
-    console.log("[webhook-expense] request body:", data);
-
-    // buscar usuario por token
-    const { data: user, error: userError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("webhook_token", token)
-      .maybeSingle();
-
-    if (userError || !user) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    // insertar gasto
-    const { error: insertError } = await supabase
-      .from("expenses")
-      .insert({
-        user_id: user.id,
-        amount: data.amount,
-        category: data.category || "other",
-        description: data.description || "",
-        expense_type: "normal"
-      });
-
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  if (!token) {
+    return NextResponse.json({ error: "Missing token" }, { status: 400 });
   }
+
+  const auth = await getWebhookUserByToken(token);
+  if (!auth) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const payload = (await req.json()) as ExpenseWebhookPayload;
+  if (!payload.amount || Number(payload.amount) <= 0) {
+    return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+  }
+
+  const description = (payload.description ?? "").trim();
+  const providedCategory = payload.category?.trim() ?? null;
+
+  let categoryId: string | null = null;
+  if (!providedCategory || providedCategory.toLowerCase() === "none") {
+    categoryId = await matchExpenseRule(description, auth.user.id, auth.supabase);
+  }
+
+  const categoryResolved = Boolean(categoryId);
+  const categoryText = providedCategory && providedCategory.length > 0
+    ? providedCategory
+    : categoryResolved
+      ? "auto"
+      : "other";
+
+  const { error } = await auth.supabase
+    .from("expenses")
+    .insert({
+      user_id: auth.user.id,
+      amount: Number(payload.amount),
+      category: categoryText,
+      category_id: categoryId,
+      description,
+      expense_type: "normal",
+      type: "expense"
+    });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    success: true,
+    category_resolved: categoryResolved
+  });
 }

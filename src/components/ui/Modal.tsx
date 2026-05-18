@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useCallback, useEffect, useId, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 type ModalVariant = "dialog" | "sheet" | "fullscreen";
@@ -15,6 +15,23 @@ type ModalProps = {
   children: React.ReactNode;
 };
 
+const FOCUSABLE_SELECTOR = [
+  'a[href]:not([tabindex="-1"])',
+  'button:not([disabled]):not([tabindex="-1"])',
+  'textarea:not([disabled]):not([tabindex="-1"])',
+  'input:not([disabled]):not([tabindex="-1"])',
+  'select:not([disabled]):not([tabindex="-1"])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(",");
+
+const INITIAL_FOCUS_SELECTOR = [
+  '[data-autofocus="true"]',
+  'input:not([disabled]):not([tabindex="-1"])',
+  'textarea:not([disabled]):not([tabindex="-1"])',
+  'select:not([disabled]):not([tabindex="-1"])',
+  '[contenteditable="true"]:not([tabindex="-1"])'
+].join(",");
+
 export default function Modal({
   open,
   onClose,
@@ -25,8 +42,17 @@ export default function Modal({
   children
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const onCloseRef = useRef(onClose);
   const titleId = useId();
   const descId = useId();
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  const requestClose = useCallback(() => {
+    onCloseRef.current();
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -39,7 +65,7 @@ export default function Modal({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onClose();
+        requestClose();
         return;
       }
 
@@ -47,16 +73,7 @@ export default function Modal({
         return;
       }
 
-      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
-        [
-          'a[href]:not([tabindex="-1"])',
-          'button:not([disabled]):not([tabindex="-1"])',
-          "textarea:not([disabled]):not([tabindex=\"-1\"])",
-          'input:not([disabled]):not([tabindex="-1"])',
-          'select:not([disabled]):not([tabindex="-1"])',
-          '[tabindex]:not([tabindex="-1"])'
-        ].join(",")
-      );
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
 
       if (!focusable.length) {
         event.preventDefault();
@@ -66,6 +83,12 @@ export default function Modal({
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       const current = document.activeElement as HTMLElement | null;
+
+      if (!current || !panelRef.current.contains(current)) {
+        event.preventDefault();
+        first.focus();
+        return;
+      }
 
       if (event.shiftKey && current === first) {
         event.preventDefault();
@@ -77,24 +100,41 @@ export default function Modal({
     };
 
     document.addEventListener("keydown", onKeyDown);
-    const initialFocus = panelRef.current?.querySelector<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    (initialFocus ?? panelRef.current)?.focus();
+
+    const rafId = window.requestAnimationFrame(() => {
+      const panel = panelRef.current;
+      if (!panel) {
+        return;
+      }
+
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (activeEl && panel.contains(activeEl)) {
+        return;
+      }
+
+      const preferred = panel.querySelector<HTMLElement>(INITIAL_FOCUS_SELECTOR);
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+      const fallback = focusable.find((element) => element.dataset.modalClose !== "true") ?? null;
+
+      (preferred ?? fallback ?? panel).focus();
+    });
 
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
-      previousFocus?.focus();
+      window.cancelAnimationFrame(rafId);
+      if (previousFocus && document.contains(previousFocus)) {
+        previousFocus.focus();
+      }
     };
-  }, [onClose, open]);
+  }, [open, requestClose]);
 
   return (
     <AnimatePresence>
       {open ? (
         <motion.div
           className="nx-modal-overlay"
-          onMouseDown={onClose}
+          onMouseDown={requestClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -125,7 +165,13 @@ export default function Modal({
                   </p>
                 ) : null}
               </div>
-              <button type="button" className="nx-modal-close" onClick={onClose} aria-label="Close dialog">
+              <button
+                type="button"
+                className="nx-modal-close"
+                onClick={requestClose}
+                aria-label="Close dialog"
+                data-modal-close="true"
+              >
                 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                   <path d="M5 5L15 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   <path d="M15 5L5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

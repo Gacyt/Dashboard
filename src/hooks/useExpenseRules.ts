@@ -10,10 +10,60 @@ type RulePayload = {
   match_type: "contains" | "exact";
 };
 
+type HistoricalRuleSyncPayload = {
+  keyword: string;
+  categoryId: string | null;
+  matchType: "contains" | "exact";
+};
+
 export function useExpenseRules(userId: string) {
   const supabase = getSupabaseBrowserClient();
   const [rules, setRules] = useState<ExpenseRule[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const applyRuleToHistoricalExpenses = useCallback(
+    async ({ keyword, categoryId, matchType }: HistoricalRuleSyncPayload) => {
+      const normalizedKeyword = keyword.trim().toLowerCase();
+      if (!normalizedKeyword || !categoryId) {
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("id, description")
+        .eq("user_id", userId)
+        .is("category_id", null)
+        .in("category", ["other", "auto"]);
+
+      if (error || !data?.length) {
+        return;
+      }
+
+      const matchingIds = data
+        .filter((expense) => {
+          const description = (expense.description ?? "").trim().toLowerCase();
+          if (!description) {
+            return false;
+          }
+          return matchType === "exact"
+            ? description === normalizedKeyword
+            : description.includes(normalizedKeyword);
+        })
+        .map((expense) => expense.id);
+
+      if (!matchingIds.length) {
+        return;
+      }
+
+      await supabase
+        .from("expenses")
+        .update({ category_id: categoryId, category: "auto" })
+        .eq("user_id", userId)
+        .is("category_id", null)
+        .in("id", matchingIds);
+    },
+    [supabase, userId]
+  );
 
   const queryRules = useCallback(async () => {
     const { data, error } = await supabase
@@ -79,6 +129,11 @@ export function useExpenseRules(userId: string) {
     }
 
     if (data) {
+      await applyRuleToHistoricalExpenses({
+        keyword: payload.keyword,
+        matchType: payload.match_type,
+        categoryId: payload.category_id
+      });
       setRules((prev) => [data as ExpenseRule, ...prev]);
     }
   };
@@ -109,6 +164,11 @@ export function useExpenseRules(userId: string) {
     }
 
     if (data) {
+      await applyRuleToHistoricalExpenses({
+        keyword: data.keyword,
+        matchType: data.match_type,
+        categoryId: data.category_id
+      });
       setRules((prev) => prev.map((item) => (item.id === ruleId ? (data as ExpenseRule) : item)));
     }
   };

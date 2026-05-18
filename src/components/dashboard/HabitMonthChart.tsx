@@ -37,6 +37,8 @@ export default function HabitMonthChart({
             fill="var(--green-dim)"
             strokeWidth={2}
             dot={{ r: 2, fill: "var(--green)" }}
+            isAnimationActive
+            animationDuration={760}
           />
         </AreaChart>
       </ResponsiveContainer>

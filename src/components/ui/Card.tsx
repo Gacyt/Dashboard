@@ -1,3 +1,7 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 export default function Card({
   title,
   subtitle,
@@ -10,7 +14,11 @@ export default function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="nx-card">
+    <motion.section
+      className="nx-card"
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", stiffness: 280, damping: 20, mass: 0.7 }}
+    >
       <header className="nx-card-hd">
         <div>
           <h2 className="nx-card-title">{title}</h2>
@@ -19,6 +27,6 @@ export default function Card({
         {action}
       </header>
       {children}
-    </section>
+    </motion.section>
   );
 }

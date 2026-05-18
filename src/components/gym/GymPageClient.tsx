@@ -321,12 +321,12 @@ function ExerciseCard({
       className="nx-panel"
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
-      <div className="nx-between" style={{ gap: "8px", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+      <div className="nx-exercise-head">
+        <div className="nx-exercise-left">
           <button className="nx-btn" type="button" {...attributes} {...listeners} aria-label="Drag handle">
             ⋮⋮
           </button>
-          <div style={{ width: "54px", height: "54px", borderRadius: "8px", background: "var(--bg4)", display: "grid", placeItems: "center" }}>
+          <div className="nx-exercise-avatar">
             <span
               style={{
                 fontFamily: "var(--font-barlow-condensed), sans-serif",
@@ -344,7 +344,7 @@ function ExerciseCard({
             <p className="nx-exp-cat">{exercise.notes || "Tap to add cues and progression notes."}</p>
           </div>
         </div>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <div className="nx-exercise-actions">
           <button className={`nx-btn ${todayDone ? "primary" : ""}`} type="button" onClick={() => onComplete()}>
             {todayDone ? "Completed" : "Mark Done"}
           </button>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
 import FinanceCard from "./FinanceCard";
 import HabitsCard from "./HabitsCard";
 import TasksCard from "./TasksCard";
@@ -11,6 +13,7 @@ import HabitMonthChart from "./HabitMonthChart";
 import Card from "@/components/ui/Card";
 import AppShell from "@/components/layout/AppShell";
 import { formatCRC } from "@/lib/format";
+import { openCreateHub } from "@/lib/createHub";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useHabits } from "@/hooks/useHabits";
 import { useTasks } from "@/hooks/useTasks";
@@ -76,41 +79,71 @@ export default function DashboardView({
 
   return (
     <AppShell userId={userId} userEmail={userEmail} title="COMMAND CENTER">
+      <motion.section
+        className="nx-panel"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
+      >
+        <div className="nx-between" style={{ gap: "10px", flexWrap: "wrap" }}>
+          <div className="nx-prose">
+            <h2 className="nx-card-title" style={{ marginBottom: "6px" }}>
+              Today&apos;s operating layer
+            </h2>
+            <p>
+              Track execution, protect energy, and keep your systems aligned across finance, habits,
+              and deep work.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button className="nx-btn primary" type="button" onClick={() => openCreateHub()}>
+              New capture
+            </button>
+            <Link href="/dashboard/analytics" className="nx-btn">
+              Open analytics
+            </Link>
+            <Link href="/dashboard/journal" className="nx-btn">
+              Open journal
+            </Link>
+          </div>
+        </div>
+      </motion.section>
+
       <section className="nx-stats-row">
-            <StatCard
-              tone="cyan"
-              label="Habits Done"
-              value={`${summary.habitsDone}`}
-              subValue={`/${summary.habitsTotal}`}
-              footerLabel="Today"
-              badgeText={`${metrics.todayPct}%`}
-              badgeTone="up"
-            />
-            <StatCard
-              tone="orange"
-              label="Budget Left"
-              value={formatCRC(summary.budgetLeft)}
-              footerLabel="34% spent"
-              badgeText="On track"
-              badgeTone="info"
-            />
-            <StatCard
-              tone="red"
-              label="Open Tasks"
-              value={`${pendingCount}`}
-              footerLabel={`${summary.dueToday} due today`}
-              badgeText="Urgent"
-              badgeTone="warn"
-            />
-            <StatCard
-              tone="green"
-              label="Week Streak"
-              value={`${summary.weekStreak}`}
-              subValue="d"
-              footerLabel="Best: 12d"
-              badgeText="Active"
-              badgeTone="up"
-            />
+        <StatCard
+          tone="cyan"
+          label="Habits done"
+          value={`${summary.habitsDone}`}
+          subValue={`/${summary.habitsTotal}`}
+          footerLabel="Today"
+          badgeText={`${metrics.todayPct}%`}
+          badgeTone="up"
+        />
+        <StatCard
+          tone="orange"
+          label="Budget left"
+          value={formatCRC(summary.budgetLeft)}
+          footerLabel="34% spent"
+          badgeText="On track"
+          badgeTone="info"
+        />
+        <StatCard
+          tone="red"
+          label="Open tasks"
+          value={`${pendingCount}`}
+          footerLabel={`${summary.dueToday} due today`}
+          badgeText={summary.dueToday > 0 ? "Needs focus" : "Stable"}
+          badgeTone={summary.dueToday > 0 ? "warn" : "info"}
+        />
+        <StatCard
+          tone="green"
+          label="Week streak"
+          value={`${summary.weekStreak}`}
+          subValue="d"
+          footerLabel="Best: 12d"
+          badgeText="Active"
+          badgeTone="up"
+        />
       </section>
 
       <section className="nx-main-grid">
@@ -140,14 +173,14 @@ export default function DashboardView({
 
       <section id="analytics">
         <div className="nx-section-header">
-          <h3 className="nx-section-title">ANALYTICS</h3>
+          <h3 className="nx-section-title">Analytics view</h3>
           <div className="nx-section-line" />
           <span className="nx-section-badge">
             {new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" })}
           </span>
         </div>
         <div className="nx-analytics-row">
-          <Card title="SPENDING BREAKDOWN" subtitle="By category · this month">
+          <Card title="Spending breakdown" subtitle="Category distribution this month">
             <div className="nx-card-body">
               <div className="nx-chart-legend">
                 {spendingBreakdown.map((item) => (
@@ -160,7 +193,7 @@ export default function DashboardView({
               <SpendingDonut data={spendingBreakdown} />
             </div>
           </Card>
-          <Card title="HABIT COMPLETION" subtitle="% per day · this month">
+          <Card title="Habit completion" subtitle="Daily completion pattern">
             <div className="nx-card-body">
               <HabitMonthChart data={metrics.monthData} />
             </div>

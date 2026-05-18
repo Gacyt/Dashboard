@@ -2,25 +2,39 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
+import Modal from "@/components/ui/Modal";
 import { useCategories } from "@/hooks/useCategories";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useToast } from "@/hooks/useToast";
 import { formatCRC } from "@/lib/format";
+import type { SpendingCategory } from "@/lib/types";
 
-const PRESET_COLORS = ["#00D4FF", "#FF6B2B", "#00C896", "#FF3D5A", "#F0B429", "#A78BFA"];
+const PRESET_COLORS = ["#2f8cdb", "#f09b3f", "#2bb78a", "#e0597d", "#9f85e5", "#76849f"];
+
+type CategoryFormState = {
+  name: string;
+  budget: string;
+  color: string;
+};
+
+const EMPTY_FORM: CategoryFormState = {
+  name: "",
+  budget: "",
+  color: PRESET_COLORS[0]
+};
 
 export default function CategoriesPageClient({ userId }: { userId: string }) {
   const { categories, addCategory, updateCategory, deleteCategory } = useCategories(userId);
   const { expenses } = useExpenses(userId);
   const { pushToast } = useToast();
 
-  const [name, setName] = useState("");
-  const [budget, setBudget] = useState("");
-  const [color, setColor] = useState(PRESET_COLORS[0]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
-  const [editingBudget, setEditingBudget] = useState("");
-  const [editingColor, setEditingColor] = useState(PRESET_COLORS[0]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<CategoryFormState>(EMPTY_FORM);
+
+  const [editingCategory, setEditingCategory] = useState<SpendingCategory | null>(null);
+  const [editForm, setEditForm] = useState<CategoryFormState>(EMPTY_FORM);
+
+  const [deletingCategory, setDeletingCategory] = useState<SpendingCategory | null>(null);
 
   const monthId = new Date().toISOString().slice(0, 7);
   const spentByCategory = useMemo(() => {
@@ -32,50 +46,59 @@ export default function CategoriesPageClient({ userId }: { userId: string }) {
     return map;
   }, [expenses, monthId]);
 
-  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const openEdit = (category: SpendingCategory) => {
+    setEditingCategory(category);
+    setEditForm({
+      name: category.name,
+      budget: String(category.monthly_budget),
+      color: category.color
+    });
+  };
+
+  const onCreateSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const numericBudget = Number(budget || "0");
-    if (!name.trim()) {
+    const numericBudget = Number(createForm.budget || "0");
+    if (!createForm.name.trim()) {
       pushToast("Category name is required.", "error");
       return;
     }
     await addCategory({
-      name: name.trim(),
+      name: createForm.name.trim(),
       monthly_budget: Number.isFinite(numericBudget) ? numericBudget : 0,
-      color
+      color: createForm.color
     });
-    setName("");
-    setBudget("");
-    setColor(PRESET_COLORS[0]);
+    setCreateOpen(false);
+    setCreateForm(EMPTY_FORM);
     pushToast("Category saved.", "success");
   };
 
-  const beginEdit = (category: { id: string; name: string; monthly_budget: number; color: string }) => {
-    setEditingId(category.id);
-    setEditingName(category.name);
-    setEditingBudget(String(category.monthly_budget));
-    setEditingColor(category.color);
-  };
-
-  const saveEdit = async () => {
-    if (!editingId) return;
-    await updateCategory(editingId, {
-      name: editingName.trim(),
-      monthly_budget: Number(editingBudget || "0"),
-      color: editingColor
+  const onEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingCategory) {
+      return;
+    }
+    await updateCategory(editingCategory.id, {
+      name: editForm.name.trim(),
+      monthly_budget: Number(editForm.budget || "0"),
+      color: editForm.color
     });
-    setEditingId(null);
+    setEditingCategory(null);
     pushToast("Category updated.", "success");
   };
 
   return (
     <div className="stagger">
       <section className="nx-panel animate-fade-in-up">
-        <div className="nx-between" style={{ marginBottom: "10px" }}>
-          <h2 className="nx-card-title">Active Categories</h2>
-          <Link href="/dashboard/categories/rules" className="nx-btn">
-            Manage Rules
-          </Link>
+        <div className="nx-between" style={{ marginBottom: "10px", gap: "8px", flexWrap: "wrap" }}>
+          <h2 className="nx-card-title">Active categories</h2>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button className="nx-btn primary" type="button" onClick={() => setCreateOpen(true)}>
+              Add category
+            </button>
+            <Link href="/dashboard/categories/rules" className="nx-btn">
+              Manage rules
+            </Link>
+          </div>
         </div>
 
         <div style={{ display: "grid", gap: "8px" }}>
@@ -84,28 +107,19 @@ export default function CategoriesPageClient({ userId }: { userId: string }) {
             const budgetAmount = Number(category.monthly_budget ?? 0);
             const pct = budgetAmount > 0 ? Math.min((spent / budgetAmount) * 100, 999) : 0;
             const isOver = budgetAmount > 0 && spent > budgetAmount;
-            const editing = editingId === category.id;
 
             return (
-              <div key={category.id} className="nx-panel" style={{ padding: "10px" }}>
+              <article key={category.id} className="nx-panel" style={{ padding: "10px" }}>
                 <div className="nx-between">
                   <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                     <span className="nx-color-dot" style={{ background: category.color }} />
                     <strong>{category.name}</strong>
                   </div>
                   <div style={{ display: "flex", gap: "6px" }}>
-                    <button className="nx-btn" type="button" onClick={() => beginEdit(category)}>
+                    <button className="nx-btn" type="button" onClick={() => openEdit(category)}>
                       Edit
                     </button>
-                    <button
-                      className="nx-btn"
-                      type="button"
-                      onClick={async () => {
-                        if (!window.confirm(`Delete category "${category.name}"?`)) return;
-                        await deleteCategory(category.id);
-                        pushToast("Category deleted.", "success");
-                      }}
-                    >
+                    <button className="nx-btn" type="button" onClick={() => setDeletingCategory(category)}>
                       Delete
                     </button>
                   </div>
@@ -113,8 +127,10 @@ export default function CategoriesPageClient({ userId }: { userId: string }) {
 
                 <div style={{ marginTop: "8px" }}>
                   <div className="nx-between">
-                    <span>{formatCRC(spent)} / {formatCRC(budgetAmount)}</span>
-                    {isOver ? <span style={{ color: "var(--red)", fontWeight: 700 }}>OVER BUDGET</span> : null}
+                    <span>
+                      {formatCRC(spent)} / {formatCRC(budgetAmount)}
+                    </span>
+                    {isOver ? <span style={{ color: "var(--red)", fontWeight: 700 }}>Over budget</span> : null}
                   </div>
                   <div className="nx-progress" style={{ marginTop: "5px" }}>
                     <span
@@ -125,62 +141,135 @@ export default function CategoriesPageClient({ userId }: { userId: string }) {
                     />
                   </div>
                 </div>
-
-                <div
-                  style={{
-                    maxHeight: editing ? "180px" : "0px",
-                    overflow: "hidden",
-                    transition: "max-height 0.2s ease",
-                    marginTop: editing ? "10px" : "0"
-                  }}
-                >
-                  {editing ? (
-                    <div className="nx-form-grid two">
-                      <input className="nx-input" value={editingName} onChange={(event) => setEditingName(event.target.value)} placeholder="Name" />
-                      <input className="nx-input" type="number" min="0" step="0.01" value={editingBudget} onChange={(event) => setEditingBudget(event.target.value)} placeholder="Monthly budget" />
-                      <input className="nx-input" value={editingColor} onChange={(event) => setEditingColor(event.target.value)} placeholder="#00D4FF" />
-                      <div style={{ display: "flex", gap: "6px" }}>
-                        <button className="nx-btn primary" type="button" onClick={saveEdit}>Save</button>
-                        <button className="nx-btn" type="button" onClick={() => setEditingId(null)}>Cancel</button>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
+              </article>
             );
           })}
+
+          {!categories.length ? (
+            <div className="nx-empty">No categories created yet. Add your first category to track spending accurately.</div>
+          ) : null}
         </div>
       </section>
 
-      <section className="nx-panel">
-        <h2 className="nx-card-title" style={{ marginBottom: "10px" }}>Add / Edit Category</h2>
-        <form className="nx-form-grid two" onSubmit={onSubmit}>
-          <input className="nx-input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Category name" required />
-          <input className="nx-input" type="number" min="0" step="0.01" value={budget} onChange={(event) => setBudget(event.target.value)} placeholder="Monthly budget (CRC)" />
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-            {PRESET_COLORS.map((swatch) => (
-              <button
-                key={swatch}
-                type="button"
-                onClick={() => setColor(swatch)}
-                style={{
-                  width: "24px",
-                  height: "24px",
-                  borderRadius: "4px",
-                  border: color === swatch ? "2px solid #fff" : "1px solid var(--border2)",
-                  background: swatch,
-                  transform: color === swatch ? "scale(1.15)" : "scale(1)",
-                  transition: "transform 0.15s ease"
-                }}
-              />
-            ))}
+      <Modal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="Create category"
+        description="Add a spending category with budget and color."
+      >
+        <CategoryForm
+          value={createForm}
+          onChange={setCreateForm}
+          onSubmit={onCreateSubmit}
+          submitLabel="Save category"
+        />
+      </Modal>
+
+      <Modal
+        open={Boolean(editingCategory)}
+        onClose={() => setEditingCategory(null)}
+        title={editingCategory ? `Edit ${editingCategory.name}` : "Edit category"}
+        description="Update budget, naming, and visual color."
+      >
+        <CategoryForm
+          value={editForm}
+          onChange={setEditForm}
+          onSubmit={onEditSubmit}
+          submitLabel="Save changes"
+        />
+      </Modal>
+
+      <Modal
+        open={Boolean(deletingCategory)}
+        onClose={() => setDeletingCategory(null)}
+        title="Delete category"
+        description="This removes the category configuration and associated rules."
+      >
+        <div className="nx-form-grid">
+          <p className="nx-prose">
+            Delete <strong>{deletingCategory?.name}</strong>?
+          </p>
+          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+            <button className="nx-btn" type="button" onClick={() => setDeletingCategory(null)}>
+              Cancel
+            </button>
+            <button
+              className="nx-btn primary"
+              type="button"
+              onClick={async () => {
+                if (!deletingCategory) {
+                  return;
+                }
+                await deleteCategory(deletingCategory.id);
+                setDeletingCategory(null);
+                pushToast("Category deleted.", "success");
+              }}
+            >
+              Delete
+            </button>
           </div>
-          <input className="nx-input" value={color} onChange={(event) => setColor(event.target.value)} placeholder="#00D4FF" />
-          <button className="nx-btn primary" type="submit">
-            Save Category
-          </button>
-        </form>
-      </section>
+        </div>
+      </Modal>
     </div>
+  );
+}
+
+function CategoryForm({
+  value,
+  onChange,
+  onSubmit,
+  submitLabel
+}: {
+  value: CategoryFormState;
+  onChange: (value: CategoryFormState) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
+  submitLabel: string;
+}) {
+  return (
+    <form className="nx-form-grid" onSubmit={onSubmit}>
+      <input
+        className="nx-input"
+        value={value.name}
+        onChange={(event) => onChange({ ...value, name: event.target.value })}
+        placeholder="Category name"
+        required
+      />
+      <input
+        className="nx-input"
+        type="number"
+        min="0"
+        step="0.01"
+        value={value.budget}
+        onChange={(event) => onChange({ ...value, budget: event.target.value })}
+        placeholder="Monthly budget (CRC)"
+      />
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+        {PRESET_COLORS.map((swatch) => (
+          <button
+            key={swatch}
+            type="button"
+            onClick={() => onChange({ ...value, color: swatch })}
+            style={{
+              width: "24px",
+              height: "24px",
+              borderRadius: "6px",
+              border: value.color === swatch ? "2px solid #fff" : "1px solid var(--border2)",
+              background: swatch,
+              transform: value.color === swatch ? "scale(1.15)" : "scale(1)",
+              transition: "transform 0.15s ease"
+            }}
+          />
+        ))}
+      </div>
+      <input
+        className="nx-input"
+        value={value.color}
+        onChange={(event) => onChange({ ...value, color: event.target.value })}
+        placeholder="#2f8cdb"
+      />
+      <button className="nx-btn primary" type="submit">
+        {submitLabel}
+      </button>
+    </form>
   );
 }

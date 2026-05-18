@@ -12,7 +12,7 @@ export default function JournalCard({
 }) {
   return (
     <Card
-      title="JOURNAL"
+      title="Journal"
       subtitle="Latest entries"
       action={
         <button className="nx-card-action" type="button" onClick={() => openCreateHub("journal")}>
@@ -24,7 +24,10 @@ export default function JournalCard({
         {entries.length > 0 ? (
           <div className="nx-journal-entry">
             <p className="nx-journal-date">{new Date(entries[0].created_at).toLocaleDateString()}</p>
-            <p className="nx-journal-text">&quot;{entries[0].content}&quot;</p>
+            <p className="nx-journal-text">
+              &quot;{entries[0].content.slice(0, 220)}
+              {entries[0].content.length > 220 ? "…" : ""}&quot;
+            </p>
           </div>
         ) : (
           <div className="nx-journal-entry">

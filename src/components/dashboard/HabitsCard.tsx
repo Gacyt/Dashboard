@@ -37,7 +37,7 @@ export default function HabitsCard({
 
   return (
     <Card
-      title="DAILY HABITS"
+      title="Daily habits"
       subtitle={`${visualHabits.filter((item) => item.done).length} of ${Math.max(visualHabits.length, 1)} complete`}
       action={
         <button className="nx-card-action" type="button" onClick={() => openCreateHub("habit")}>
@@ -68,20 +68,24 @@ export default function HabitsCard({
       </div>
 
       <div className="nx-habit-list">
-        {visualHabits.map((habit) => (
-          <button
-            className={`nx-habit-item ${habit.done ? "done" : ""}`}
-            key={habit.id}
-            type="button"
-            onClick={() => onToggleHabit(habit)}
-          >
-            <span className={`nx-habit-check ${habit.done ? "done" : ""}`} />
-            <span>
-              <span className="nx-habit-name">{habit.name}</span>
-              <span className="nx-habit-streak">{habit.streak}d streak</span>
-            </span>
-          </button>
-        ))}
+        {visualHabits.length ? (
+          visualHabits.map((habit) => (
+            <button
+              className={`nx-habit-item ${habit.done ? "done" : ""}`}
+              key={habit.id}
+              type="button"
+              onClick={() => onToggleHabit(habit)}
+            >
+              <span className={`nx-habit-check ${habit.done ? "done" : ""}`} />
+              <span>
+                <span className="nx-habit-name">{habit.name}</span>
+                <span className="nx-habit-streak">{habit.streak}d streak</span>
+              </span>
+            </button>
+          ))
+        ) : (
+          <div className="nx-empty">No habits configured yet. Add one to start a visible streak.</div>
+        )}
       </div>
 
       <div className="nx-habit-chart-wrap">

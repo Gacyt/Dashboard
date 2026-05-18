@@ -33,6 +33,8 @@ export default function HabitLineChart({
             strokeWidth={2}
             dot={{ r: 2, fill: "var(--accent)" }}
             activeDot={{ r: 4 }}
+            isAnimationActive
+            animationDuration={680}
           />
         </AreaChart>
       </ResponsiveContainer>

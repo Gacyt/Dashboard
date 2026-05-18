@@ -1,77 +1,89 @@
 .authPage {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: var(--side-padding);
+  padding: clamp(16px, 4vw, 32px);
+  background:
+    radial-gradient(circle at 12% -8%, color-mix(in oklab, var(--accent) 28%, transparent), transparent 38%),
+    radial-gradient(circle at 85% 4%, color-mix(in oklab, var(--green) 20%, transparent), transparent 34%),
+    var(--bg);
 }
 
 .authCard {
-  width: min(100%, 520px);
-  border: var(--border);
-  background: var(--bg-light);
-  backdrop-filter: blur(6px);
-  box-shadow: var(--shadow);
-  padding: clamp(20px, 4vw, 36px);
+  width: min(100%, 540px);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: color-mix(in oklab, var(--bg2) 86%, transparent);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 48px rgba(4, 8, 20, 0.35);
+  padding: clamp(22px, 4vw, 38px);
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .kicker {
-  color: var(--cf);
-  text-transform: uppercase;
+  color: var(--txt2);
   font-size: 12px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .title {
-  font-size: clamp(28px, 4vw, 44px);
-  color: var(--tx);
+  font-family: var(--font-barlow-condensed), sans-serif;
+  font-size: clamp(32px, 5vw, 52px);
+  color: var(--txt);
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  text-wrap: balance;
 }
 
 .subtitle {
-  color: var(--tx2);
+  color: var(--txt2);
   font-size: 14px;
-  margin-bottom: 8px;
+  max-width: 42ch;
+  line-height: 1.6;
 }
 
 .form {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .input {
   width: 100%;
-  border: none;
-  border-bottom: var(--border);
-  background: transparent;
-  color: var(--tx);
-  padding: 10px 0;
+  min-height: 48px;
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--bg3) 88%, transparent);
+  color: var(--txt);
+  padding: 10px 12px;
   font-size: 14px;
-  outline: none;
 }
 
 .input:focus,
 .input:hover {
-  border-color: var(--tx);
-  background-color: var(--tx-light);
+  border-color: var(--accent-border);
 }
 
 .button {
-  margin-top: 10px;
-  width: fit-content;
-  border: 1px dashed var(--cf);
-  color: var(--cf);
-  background: transparent;
-  padding: 8px 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 12px;
-  transition: background-color 180ms ease, color 180ms ease;
+  margin-top: 6px;
+  min-height: 46px;
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  color: #031017;
+  background: var(--accent);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
 }
 
 .button:hover:not(:disabled) {
-  background: var(--cf);
-  color: var(--light);
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(0, 212, 255, 0.24);
 }
 
 .button:disabled {
@@ -80,21 +92,21 @@
 }
 
 .error {
-  color: var(--cf);
+  color: var(--red);
   font-size: 13px;
 }
 
 .notice {
-  color: var(--tx2);
+  color: var(--green);
   font-size: 13px;
 }
 
 .helper {
-  color: var(--tx2);
+  color: var(--txt2);
   font-size: 13px;
 }
 
 .helper a {
-  color: var(--cf);
+  color: var(--accent);
+  font-weight: 600;
 }
-

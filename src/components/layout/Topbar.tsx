@@ -41,10 +41,18 @@ function TopbarIcon({ kind }: { kind: "search" | "notifications" | "settings" | 
 
 export default function Topbar({
   title = "COMMAND CENTER",
-  onMenuClick
+  onMenuClick,
+  onSearchClick,
+  onNotificationsClick,
+  onSettingsClick,
+  pendingNotifications = 0
 }: {
   title?: string;
   onMenuClick?: () => void;
+  onSearchClick?: () => void;
+  onNotificationsClick?: () => void;
+  onSettingsClick?: () => void;
+  pendingNotifications?: number;
 }) {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -70,13 +78,16 @@ export default function Topbar({
         <button className="nx-topbar-btn" type="button" aria-label="Create" onClick={() => openCreateHub()}>
           <TopbarIcon kind="plus" />
         </button>
-        <button className="nx-topbar-btn" type="button" aria-label="Search">
+        <button className="nx-topbar-btn" type="button" aria-label="Search workspace" onClick={onSearchClick}>
           <TopbarIcon kind="search" />
         </button>
-        <button className="nx-topbar-btn" type="button" aria-label="Notifications">
+        <button className="nx-topbar-btn" type="button" aria-label="Notifications" onClick={onNotificationsClick}>
           <TopbarIcon kind="notifications" />
+          {pendingNotifications > 0 ? (
+            <span className="nx-icon-badge">{Math.min(pendingNotifications, 99)}</span>
+          ) : null}
         </button>
-        <button className="nx-topbar-btn" type="button" aria-label="Settings">
+        <button className="nx-topbar-btn" type="button" aria-label="Settings" onClick={onSettingsClick}>
           <TopbarIcon kind="settings" />
         </button>
       </div>

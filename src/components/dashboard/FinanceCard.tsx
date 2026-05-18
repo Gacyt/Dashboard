@@ -21,8 +21,8 @@ export default function FinanceCard({
 
   return (
     <Card
-      title="FINANCE"
-      subtitle="Current month — CRC"
+      title="Finance"
+      subtitle="Current month · CRC"
       action={
         <button className="nx-card-action" type="button" onClick={() => openCreateHub("expense")}>
           Add Expense
@@ -58,20 +58,31 @@ export default function FinanceCard({
         </div>
 
         <p className="nx-list-label">Recent Expenses</p>
-        <div className="nx-exp-list">
-          {(expenses.length ? expenses : []).slice(0, 3).map((expense) => (
-            <div className="nx-exp-row" key={expense.id}>
-              <div className="nx-exp-ic">₡</div>
-              <div className="nx-flex-1">
-                <p className="nx-exp-name">{expense.description || "Expense"}</p>
-                <p className="nx-exp-cat">
-                  {expense.category} · {new Date(expense.created_at).toLocaleDateString()}
-                </p>
+        {expenses.length ? (
+          <div className="nx-exp-list">
+            {expenses.slice(0, 3).map((expense) => (
+              <div className="nx-exp-row" key={expense.id}>
+                <div className="nx-exp-ic">₡</div>
+                <div className="nx-flex-1">
+                  <p className="nx-exp-name">{expense.description || "Expense"}</p>
+                  <p className="nx-exp-cat">
+                    {expense.category} · {new Date(expense.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <p className="nx-exp-amt">-{formatCRC(Number(expense.amount))}</p>
               </div>
-              <p className="nx-exp-amt">-{formatCRC(Number(expense.amount))}</p>
+            ))}
+          </div>
+        ) : (
+          <div className="nx-empty">
+            No expenses yet. Capture your first expense to activate finance analytics.
+            <div style={{ marginTop: "8px" }}>
+              <button className="nx-btn primary" type="button" onClick={() => openCreateHub("expense")}>
+                Add first expense
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
     </Card>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 type ModalVariant = "dialog" | "sheet" | "fullscreen";
 
@@ -88,43 +89,54 @@ export default function Modal({
     };
   }, [onClose, open]);
 
-  if (!open) {
-    return null;
-  }
-
   return (
-    <div className="nx-modal-overlay" onMouseDown={onClose}>
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={description ? descId : undefined}
-        tabIndex={-1}
-        className={`nx-modal-panel nx-modal-${variant}`}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <header className="nx-modal-header">
-          <div>
-            <h2 id={titleId} className="nx-modal-title">
-              {title}
-            </h2>
-            {description ? (
-              <p id={descId} className="nx-modal-description">
-                {description}
-              </p>
-            ) : null}
-          </div>
-          <button type="button" className="nx-modal-close" onClick={onClose} aria-label="Close dialog">
-            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M5 5L15 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              <path d="M15 5L5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-          </button>
-        </header>
-        <div className="nx-modal-body">{children}</div>
-        {footer ? <footer className="nx-modal-footer">{footer}</footer> : null}
-      </div>
-    </div>
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="nx-modal-overlay"
+          onMouseDown={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={description ? descId : undefined}
+            tabIndex={-1}
+            className={`nx-modal-panel nx-modal-${variant}`}
+            onMouseDown={(event) => event.stopPropagation()}
+            initial={variant === "sheet" ? { opacity: 0, y: 38 } : { opacity: 0, scale: 0.96, y: 12 }}
+            animate={variant === "sheet" ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+            exit={variant === "sheet" ? { opacity: 0, y: 26 } : { opacity: 0, scale: 0.98, y: 8 }}
+            transition={{ type: "spring", stiffness: 260, damping: 24, mass: 0.8 }}
+          >
+            <header className="nx-modal-header">
+              <div>
+                <h2 id={titleId} className="nx-modal-title">
+                  {title}
+                </h2>
+                {description ? (
+                  <p id={descId} className="nx-modal-description">
+                    {description}
+                  </p>
+                ) : null}
+              </div>
+              <button type="button" className="nx-modal-close" onClick={onClose} aria-label="Close dialog">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M5 5L15 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M15 5L5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </header>
+            <div className="nx-modal-body">{children}</div>
+            {footer ? <footer className="nx-modal-footer">{footer}</footer> : null}
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }

@@ -17,6 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
+import Modal from "@/components/ui/Modal";
 import { useCategories } from "@/hooks/useCategories";
 import { useExpenseRules } from "@/hooks/useExpenseRules";
 import { useToast } from "@/hooks/useToast";
@@ -30,6 +31,7 @@ export default function CategoryRulesPageClient({ userId }: { userId: string }) 
   const [keyword, setKeyword] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [matchType, setMatchType] = useState<"contains" | "exact">("contains");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const orderedRules = useMemo(() => [...rules].sort((a, b) => b.priority - a.priority), [rules]);
@@ -45,6 +47,7 @@ export default function CategoryRulesPageClient({ userId }: { userId: string }) 
     setKeyword("");
     setCategoryId("");
     setMatchType("contains");
+    setShowAddModal(false);
     pushToast("Rule added.", "success");
   };
 
@@ -65,11 +68,16 @@ export default function CategoryRulesPageClient({ userId }: { userId: string }) 
   return (
     <div className="stagger">
       <section className="nx-panel animate-fade-in-up">
-        <div className="nx-between" style={{ marginBottom: "10px" }}>
+        <div className="nx-between" style={{ marginBottom: "10px", gap: "8px" }}>
           <h2 className="nx-card-title">Expense Rules</h2>
-          <Link href="/dashboard/categories" className="nx-btn">
-            Back to Categories
-          </Link>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button className="nx-btn primary" type="button" onClick={() => setShowAddModal(true)}>
+              Add rule
+            </button>
+            <Link href="/dashboard/categories" className="nx-btn">
+              Back to Categories
+            </Link>
+          </div>
         </div>
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -91,8 +99,12 @@ export default function CategoryRulesPageClient({ userId }: { userId: string }) 
         </DndContext>
       </section>
 
-      <section className="nx-panel">
-        <h2 className="nx-card-title" style={{ marginBottom: "10px" }}>Add Rule</h2>
+      <Modal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add expense rule"
+        description="Map incoming transaction keywords to spending categories."
+      >
         <form className="nx-form-grid two" onSubmit={onSubmit}>
           <input className="nx-input" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Keyword" required />
           <select className="nx-select" value={categoryId} onChange={(event) => setCategoryId(event.target.value)} required>
@@ -117,7 +129,7 @@ export default function CategoryRulesPageClient({ userId }: { userId: string }) 
             Save Rule
           </button>
         </form>
-      </section>
+      </Modal>
     </div>
   );
 }
@@ -143,7 +155,7 @@ function RuleItem({
       className="nx-panel nx-rule-row"
     >
       <div className="nx-between" style={{ gap: "8px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div className="nx-rule-main">
           <button className="nx-btn" type="button" {...attributes} {...listeners} aria-label="Drag rule">
             ⋮⋮
           </button>
@@ -157,15 +169,17 @@ function RuleItem({
             {rule.match_type}
           </span>
         </div>
-        <button
-          className="nx-btn"
-          type="button"
-          onClick={() => {
-            onDelete();
-          }}
-        >
-          Delete
-        </button>
+        <div className="nx-rule-actions">
+          <button
+            className="nx-btn"
+            type="button"
+            onClick={() => {
+              onDelete();
+            }}
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );
